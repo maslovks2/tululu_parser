@@ -32,7 +32,7 @@ def save(output_path, response):
         file.write(response.content)
 
 
-def parse_book_page(soup):
+def parse(soup):
     content_div = soup.find("div", {"id": "content"})
     if not content_div:
         raise requests.exceptions.HTTPError("Books not found")
@@ -45,10 +45,15 @@ def parse_book_page(soup):
     book_cover_location = (
         content_div.find("div", class_="bookimage").find("img")['src']
     )
+    comments = [
+        comment_div.find(class_="black").text
+        for comment_div in soup.find_all("div", class_="texts")
+    ]
     return {
         'author': author.strip(),
         'title': title.strip(),
-        'book_cover_location': book_cover_location.strip()
+        'book_cover_location': book_cover_location.strip(),
+        'comments': comments
     }
 
 
@@ -103,13 +108,15 @@ def download_books(ids):
         try:
             html = get_html(get_book_page_url(id))
             soup = BeautifulSoup(html, "lxml")
-            parsed_book_page = parse_book_page(soup)
+            parsed_book_page = parse(soup)
 
             title = parsed_book_page["title"]
             url = get_book_file_url(id)
             filename = compose_filename(id, title)
             # author = parsed_book_page['author']
             download_txt(url, filename)
+
+            print(parsed_book_page['comments'])
 
             book_cover_location = parsed_book_page['book_cover_location']
             _, book_cover_extension = os.path.splitext(book_cover_location)
