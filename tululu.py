@@ -32,7 +32,8 @@ def save(output_path, response):
         file.write(response.content)
 
 
-def parse(soup):
+def parse_book_page(html):
+    soup = BeautifulSoup(html, "lxml")
     content_div = soup.find("div", {"id": "content"})
     if not content_div:
         raise requests.exceptions.HTTPError("Books not found")
@@ -116,8 +117,7 @@ def download_books(ids):
     for id in ids:
         try:
             html = get_html(get_book_page_url(id))
-            soup = BeautifulSoup(html, "lxml")
-            parsed_book_page = parse(soup)
+            parsed_book_page = parse_book_page(html)
 
             title = parsed_book_page["title"]
             url = get_book_file_url(id)
