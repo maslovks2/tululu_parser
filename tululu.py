@@ -49,11 +49,20 @@ def parse(soup):
         comment_div.find(class_="black").text
         for comment_div in soup.find_all("div", class_="texts")
     ]
+    genres = [
+        anchor_tag.text
+        for anchor_tag in (
+            content_div
+            .find('span', class_='d_book')
+            .find_all('a')
+        )
+    ]
     return {
         'author': author.strip(),
         'title': title.strip(),
         'book_cover_location': book_cover_location.strip(),
-        'comments': comments
+        'comments': comments,
+        'genres': genres
     }
 
 
@@ -115,8 +124,8 @@ def download_books(ids):
             filename = compose_filename(id, title)
             # author = parsed_book_page['author']
             download_txt(url, filename)
-
-            print(parsed_book_page['comments'])
+            print(parsed_book_page['title'])
+            print(parsed_book_page['genres'])
 
             book_cover_location = parsed_book_page['book_cover_location']
             _, book_cover_extension = os.path.splitext(book_cover_location)
