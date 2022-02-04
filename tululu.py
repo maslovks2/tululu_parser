@@ -144,4 +144,4 @@ def parse_args():
 
 if __name__ == "__main__":
     arguments = parse_args()
-    download_books(range(arguments.start_id, arguments.end_id))
+    download_books(range(arguments.start_id, arguments.end_id + 1))
