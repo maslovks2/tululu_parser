@@ -1,4 +1,4 @@
-import bs4
+import argparse
 import requests
 import os
 from bs4 import BeautifulSoup
@@ -36,7 +36,7 @@ def parse_book_page(html):
     soup = BeautifulSoup(html, "lxml")
     content_div = soup.find("div", {"id": "content"})
     if not content_div:
-        raise requests.exceptions.HTTPError("Books not found")
+        raise requests.exceptions.HTTPError("Books page found")
     title, _, author = (
         content_div
         .find("h1")
@@ -137,6 +137,20 @@ def download_books(ids):
             print(e)
 
 
+def create_parser():
+    parser = argparse.ArgumentParser(description="Script for parsing tululu.org book pages")
+    parser.add_argument("start_id", type=int, default=1)
+    parser.add_argument("end_id", type=int, default=10)
+    return parser
+
+
+def parse_args():
+    parser = create_parser()
+    args = parser.parse_args()
+    assert args.end_id > args.start_id, "--end_id must be more than --start_id"
+    return args
+
+
 if __name__ == "__main__":
-    # Примеры использования
-    download_books(range(1, 11))
+    arguments = parse_args()
+    download_books(range(arguments.start_id, arguments.end_id))
