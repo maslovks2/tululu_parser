@@ -6,22 +6,7 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
-TULULU_BASE_URL = "http://tululu.org/"
-
-
-def get_book_page_url(id):
-    book_page_location = f"b{id}"
-    return urljoin(TULULU_BASE_URL, book_page_location)
-
-
-def get_book_file_url(id):
-    return f"{TULULU_BASE_URL}?id={id}"
-
-
-def get_html(url, params=None):
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.text
+TULULU_BASE_URL = "http://tululu.org"
 
 
 def save(output_path, response):
@@ -30,6 +15,63 @@ def save(output_path, response):
         os.makedirs(dirname, exist_ok=True)
     with open(output_path, "wb") as file:
         file.write(response.content)
+
+
+def check_for_redirect(response):
+    if response.history:
+        raise requests.HTTPError(
+            f"Error. Request ({response.history[0].url}) was redirected."
+        )
+
+
+def download_file(url, filename, folder):
+    """Функция для скачивания текстовых файлов.
+    Args:
+        url (str): Cсылка на текст, который хочется скачать.
+        filename (str): Имя файла, с которым сохранять.
+        folder (str): Папка, куда сохранять.
+    Returns:
+        str: Путь до файла, куда сохранён текст.
+    """
+    response = requests.get(url)
+    check_for_redirect(response)
+    sanitized_filename = sanitize_filename(filename)
+    output_path = os.path.join(folder, sanitized_filename)
+    save(output_path, response)
+    return output_path
+
+
+def download_txt(url, filename):
+    output_folder = "books/"
+    return download_file(url, filename, output_folder)
+
+
+def download_image(url, filename):
+    ouput_folder = 'images/'
+    return download_file(url, filename, ouput_folder)
+
+
+def compose_filename(id, filename='', ext=".txt"):
+    if filename:
+        composed_filename = f"{id}. {filename}{ext}"
+    else:
+        composed_filename = f"{id}{ext}"
+    return composed_filename
+
+
+def get_book_page_url(id):
+    book_page_location = f"b{id}"
+    return urljoin(TULULU_BASE_URL, book_page_location)
+
+
+def add_meta(id, book_page):
+    title = book_page["title"]
+    book_page['book_url'] = urljoin(TULULU_BASE_URL, f"/txt.php?id={id}")
+    book_page['book_filename'] = compose_filename(id, title)
+    book_cover_location = book_page['book_cover_location']
+    _, book_cover_extension = os.path.splitext(book_cover_location)
+    book_page['cover_url'] = urljoin(TULULU_BASE_URL, book_cover_location)
+    book_page['cover_filename'] = compose_filename(id, ext=book_cover_extension)
 
 
 def parse_book_page(html):
@@ -67,74 +109,23 @@ def parse_book_page(html):
     }
 
 
-def check_for_redirect(response):
-    if response.history:
-        raise requests.HTTPError(
-            f"Error. Request ({response.history[0].url}) was redirected."
-        )
-
-
-def compose_filename(id, filename='', ext=".txt"):
-    if filename:
-        composed_filename = f"{id}. {filename}{ext}"
-    else:
-        composed_filename = f"{id}{ext}"
-    return composed_filename
-
-
-def download_file(url, filename, folder):
-    """Функция для скачивания текстовых файлов.
-    Args:
-        url (str): Cсылка на текст, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранён текст.
-    """
-    response = requests.get(url)
-    check_for_redirect(response)
-    sanitized_filename = sanitize_filename(filename)
-    output_path = os.path.join(folder, sanitized_filename)
-    save(output_path, response)
-    return output_path
-
-
-def download_txt(url, filename):
-    output_folder = "books/"
-    return download_file(url, filename, output_folder)
-
-
-def download_image(url, filename):
-    ouput_folder = 'images/'
-    return download_file(url, filename, ouput_folder)
-
-
-def constuct_url_from_location(location):
-    return urljoin(TULULU_BASE_URL, location)
+def get_html(url, params=None):
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    return response.text
 
 
 def download_books(ids):
     for id in ids:
         try:
             html = get_html(get_book_page_url(id))
-            parsed_book_page = parse_book_page(html)
+            book_page = parse_book_page(html)
+            add_meta(id, book_page)
 
-            title = parsed_book_page["title"]
-            url = get_book_file_url(id)
-            filename = compose_filename(id, title)
-            # author = parsed_book_page['author']
-            download_txt(url, filename)
-            print(parsed_book_page['title'])
-            print(parsed_book_page['genres'])
-
-            book_cover_location = parsed_book_page['book_cover_location']
-            _, book_cover_extension = os.path.splitext(book_cover_location)
-            url = constuct_url_from_location(book_cover_location)
-            title = parsed_book_page['title']
-            filename = compose_filename(id, ext=book_cover_extension)
-            download_image(url, filename)
+            download_txt(book_page['book_url'], book_page['book_filename'])
+            download_image(book_page['cover_url'], book_page['cover_filename'])
         except requests.HTTPError as e:
-            print(e)
+            print(f'Error occured while parsing id:{id}({e})')
 
 
 def create_parser():
