@@ -3,7 +3,7 @@ import requests
 import os
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode, urlparse, urlunparse
 
 
 TULULU_BASE_URL = "http://tululu.org"
@@ -24,7 +24,7 @@ def check_for_redirect(response):
         )
 
 
-def download_file(url, filename, folder):
+def download_file(url, filename, folder, url_params=None):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
@@ -33,7 +33,7 @@ def download_file(url, filename, folder):
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-    response = requests.get(url)
+    response = requests.get(url, params=url_params)
     check_for_redirect(response)
     sanitized_filename = sanitize_filename(filename)
     output_path = os.path.join(folder, sanitized_filename)
@@ -49,14 +49,22 @@ def compose_filename(id, filename='', ext=".txt"):
     return composed_filename
 
 
-def add_meta(id, book_page):
+def add_meta(book_id, book_page):
     title = book_page["title"]
-    book_page['book_url'] = urljoin(TULULU_BASE_URL, f"/txt.php?id={id}")
-    book_page['book_filename'] = compose_filename(id, title)
+    book_page['book_url'] = (
+        urlunparse(
+            urlparse(TULULU_BASE_URL)
+            ._replace(
+                path='txt.php',
+                query=urlencode({'id': book_id})
+            )
+        )
+    )
+    book_page['book_filename'] = compose_filename(book_id, title)
     book_cover_location = book_page['book_cover_location']
     _, book_cover_extension = os.path.splitext(book_cover_location)
     book_page['cover_url'] = urljoin(TULULU_BASE_URL, book_cover_location)
-    book_page['cover_filename'] = compose_filename(id, ext=book_cover_extension)
+    book_page['cover_filename'] = compose_filename(book_id, ext=book_cover_extension)
 
 
 def parse_book_page(html):
