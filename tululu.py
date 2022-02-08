@@ -115,17 +115,17 @@ def get_html(url, params=None):
     return response.text
 
 
-def download_books(ids):
-    for id in ids:
+def download_books(books_ids):
+    for book_id in books_ids:
         try:
-            html = get_html(get_book_page_url(id))
+            html = get_html(get_book_page_url(book_id))
             book_page = parse_book_page(html)
-            add_meta(id, book_page)
+            add_meta(book_id, book_page)
 
             download_txt(book_page['book_url'], book_page['book_filename'])
             download_image(book_page['cover_url'], book_page['cover_filename'])
         except requests.HTTPError as e:
-            print(f'Error occured while parsing id:{id}({e})')
+            print(f'Error occured while parsing id:{book_id}({e})')
 
 
 def create_parser():
