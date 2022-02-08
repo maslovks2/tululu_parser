@@ -49,7 +49,7 @@ def compose_filename(id, filename='', ext=".txt"):
     return composed_filename
 
 
-def add_meta(book_id, book_page):
+def add_urls_and_filenames(book_id, book_page):
     title = book_page["title"]
     book_page['book_url'] = (
         urlunparse(
@@ -114,7 +114,7 @@ def download_books(books_ids):
             book_page_url = urljoin(TULULU_BASE_URL, f"b{book_id}")
             html = get_html(book_page_url)
             book_page = parse_book_page(html)
-            add_meta(book_id, book_page)
+            add_urls_and_filenames(book_id, book_page)
 
             download_file(book_page['book_url'], book_page['book_filename'], folder="books/")
             download_file(book_page['cover_url'], book_page['cover_filename'], folder="images/")
