@@ -41,27 +41,12 @@ def download_file(url, filename, folder):
     return output_path
 
 
-def download_txt(url, filename):
-    output_folder = "books/"
-    return download_file(url, filename, output_folder)
-
-
-def download_image(url, filename):
-    ouput_folder = 'images/'
-    return download_file(url, filename, ouput_folder)
-
-
 def compose_filename(id, filename='', ext=".txt"):
     if filename:
         composed_filename = f"{id}. {filename}{ext}"
     else:
         composed_filename = f"{id}{ext}"
     return composed_filename
-
-
-def get_book_page_url(id):
-    book_page_location = f"b{id}"
-    return urljoin(TULULU_BASE_URL, book_page_location)
 
 
 def add_meta(id, book_page):
@@ -118,12 +103,13 @@ def get_html(url, params=None):
 def download_books(books_ids):
     for book_id in books_ids:
         try:
-            html = get_html(get_book_page_url(book_id))
+            book_page_url = urljoin(TULULU_BASE_URL, f"b{book_id}")
+            html = get_html(book_page_url)
             book_page = parse_book_page(html)
             add_meta(book_id, book_page)
 
-            download_txt(book_page['book_url'], book_page['book_filename'])
-            download_image(book_page['cover_url'], book_page['cover_filename'])
+            download_file(book_page['book_url'], book_page['book_filename'], folder="books/")
+            download_file(book_page['cover_url'], book_page['cover_filename'], folder="images/")
         except requests.HTTPError as e:
             print(f'Error occured while parsing id:{book_id}({e})')
 
