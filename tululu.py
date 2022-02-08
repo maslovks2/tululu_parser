@@ -14,8 +14,8 @@ class FileType(enum.Enum):
     BOOK = (2, "books/")
     IMAGE = (1, "images/")
 
-    def __init__(self, id, ouput_folder):
-        self.id = id
+    def __init__(self, id_, ouput_folder):
+        self.id = id_
         self.output_folder = ouput_folder
 
 
@@ -53,8 +53,8 @@ def download_file(url, filename, file_type, url_params=None):
     return output_path
 
 
-def compose_filename(id, filename='', ext=".txt"):
-    return  f"{id}. {filename}{ext}" if filename else f"{id}{ext}"
+def compose_filename(id_, filename='', ext=".txt"):
+    return  f"{id_}. {filename}{ext}" if filename else f"{id_}{ext}"
 
 
 def add_urls_and_filenames(book_id, book_page):
@@ -140,7 +140,7 @@ def create_parser():
 def parse_args():
     parser = create_parser()
     args = parser.parse_args()
-    assert args.end_id > args.start_id, "--end_id must be more than --start_id"
+    assert args.end_id >= args.start_id, "--end_id must be more or equal than --start_id"
     return args
 
 
