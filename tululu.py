@@ -63,7 +63,7 @@ def parse_book_page(html):
     soup = BeautifulSoup(html, "lxml")
     content_div = soup.find("div", {"id": "content"})
     if not content_div:
-        raise requests.exceptions.HTTPError("Books page found")
+        raise requests.exceptions.HTTPError("Books page not found")
     title, _, author = (
         content_div
         .find("h1")
