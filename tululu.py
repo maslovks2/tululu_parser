@@ -24,7 +24,7 @@ def save(output_path, response, as_text=False):
     if dirname:
         os.makedirs(dirname, exist_ok=True)
     if as_text:
-        with open(output_path, "w") as file:
+        with open(output_path, "w", encoding=response.encoding) as file:
             file.write(response.text)
     else:
         with open(output_path, "wb") as file:
