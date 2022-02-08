@@ -1,6 +1,7 @@
 import argparse
 import requests
 import os
+import enum
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlencode, urlparse, urlunparse
@@ -9,12 +10,25 @@ from urllib.parse import urljoin, urlencode, urlparse, urlunparse
 TULULU_BASE_URL = "http://tululu.org"
 
 
-def save(output_path, response):
+class FileType(enum.Enum):
+    BOOK = (2, "books/")
+    IMAGE = (1, "images/")
+
+    def __init__(self, id, ouput_folder):
+        self.id = id
+        self.output_folder = ouput_folder
+
+
+def save(output_path, response, as_text=False):
     dirname = os.path.dirname(output_path)
     if dirname:
         os.makedirs(dirname, exist_ok=True)
-    with open(output_path, "wb") as file:
-        file.write(response.content)
+    if as_text:
+        with open(output_path, "w") as file:
+            file.write(response.text)
+    else:
+        with open(output_path, "wb") as file:
+            file.write(response.content)
 
 
 def check_for_redirect(response):
@@ -24,29 +38,23 @@ def check_for_redirect(response):
         )
 
 
-def download_file(url, filename, folder, url_params=None):
-    """Функция для скачивания текстовых файлов.
-    Args:
-        url (str): Cсылка на текст, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранён текст.
-    """
+def download_file(url, filename, file_type, url_params=None):
     response = requests.get(url, params=url_params)
     check_for_redirect(response)
-    sanitized_filename = sanitize_filename(filename)
-    output_path = os.path.join(folder, sanitized_filename)
-    save(output_path, response)
+    output_path = os.path.join(
+        file_type.output_folder, 
+        sanitize_filename(filename)
+    )
+    save(
+        output_path, 
+        response, 
+        as_text=file_type == FileType.BOOK
+    )
     return output_path
 
 
 def compose_filename(id, filename='', ext=".txt"):
-    if filename:
-        composed_filename = f"{id}. {filename}{ext}"
-    else:
-        composed_filename = f"{id}{ext}"
-    return composed_filename
+    return  f"{id}. {filename}{ext}" if filename else f"{id}{ext}"
 
 
 def add_urls_and_filenames(book_id, book_page):
@@ -116,8 +124,8 @@ def download_books(books_ids):
             book_page = parse_book_page(html)
             add_urls_and_filenames(book_id, book_page)
 
-            download_file(book_page['book_url'], book_page['book_filename'], folder="books/")
-            download_file(book_page['cover_url'], book_page['cover_filename'], folder="images/")
+            download_file(book_page['book_url'], book_page['book_filename'], file_type=FileType.BOOK)
+            download_file(book_page['cover_url'], book_page['cover_filename'], file_type=FileType.IMAGE)
         except requests.HTTPError as e:
             print(f'Error occured while parsing id:{book_id}({e})')
 
