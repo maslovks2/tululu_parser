@@ -106,7 +106,7 @@ def download_books(books_ids):
     for book_id in books_ids:
         try:
             book_page_url = urljoin(TULULU_BASE_URL, f"b{book_id}")
-            response = requests.get(url)
+            response = requests.get(book_page_url)
             response.raise_for_status()
             html = response.text
             book_page = parse_book_page(html)
