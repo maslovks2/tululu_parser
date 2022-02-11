@@ -45,10 +45,6 @@ def download_file(url, filename, file_type, url_params=None):
     return output_path
 
 
-def compose_filename(id_, filename='', ext=".txt"):
-    return  f"{id_}. {filename}{ext}" if filename else f"{id_}{ext}"
-
-
 def add_urls_and_filenames(book_id, book_page):
     title = book_page["title"]
     book_page['book_url'] = (
@@ -60,11 +56,11 @@ def add_urls_and_filenames(book_id, book_page):
             )
         )
     )
-    book_page['book_filename'] = compose_filename(book_id, title)
+    book_page['book_filename'] = f"{book_id}. {title}.txt"
     book_cover_location = book_page['book_cover_location']
     _, book_cover_extension = os.path.splitext(book_cover_location)
     book_page['cover_url'] = urljoin(TULULU_BASE_URL, book_cover_location)
-    book_page['cover_filename'] = compose_filename(book_id, ext=book_cover_extension)
+    book_page['cover_filename'] = f"{book_id}{book_cover_extension}"
 
 
 def parse_book_page(html):
