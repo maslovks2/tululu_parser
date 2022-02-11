@@ -19,18 +19,6 @@ class FileType(enum.Enum):
         self.output_folder = ouput_folder
 
 
-def save(output_path, response, as_text=False):
-    dirname = os.path.dirname(output_path)
-    if dirname:
-        os.makedirs(dirname, exist_ok=True)
-    if as_text:
-        with open(output_path, "w", encoding=response.encoding) as file:
-            file.write(response.text)
-    else:
-        with open(output_path, "wb") as file:
-            file.write(response.content)
-
-
 def check_for_redirect(response):
     if response.history:
         raise requests.HTTPError(
@@ -45,11 +33,15 @@ def download_file(url, filename, file_type, url_params=None):
         file_type.output_folder, 
         sanitize_filename(filename)
     )
-    save(
-        output_path, 
-        response, 
-        as_text=file_type == FileType.BOOK
-    )
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    if file_type == FileType.BOOK:
+        with open(output_path, "w", encoding=response.encoding) as file:
+            file.write(response.text)
+    else:
+        with open(output_path, "wb") as file:
+            file.write(response.content)
     return output_path
 
 
@@ -110,17 +102,13 @@ def parse_book_page(html):
     }
 
 
-def get_html(url, params=None):
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.text
-
-
 def download_books(books_ids):
     for book_id in books_ids:
         try:
             book_page_url = urljoin(TULULU_BASE_URL, f"b{book_id}")
-            html = get_html(book_page_url)
+            response = requests.get(url)
+            response.raise_for_status()
+            html = response.text
             book_page = parse_book_page(html)
             add_urls_and_filenames(book_id, book_page)
 
